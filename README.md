@@ -1,16 +1,71 @@
-# e-commerce-client
+# E‑Commerce Client
 
-Flutter e‑commerce app (products, cart, checkout, login/guest, profile, OTP signup, order emails).
+Flutter app for the e‑commerce platform: products, cart, checkout, auth (login/OTP signup), profile, and order history. Pairs with the Django backend (`e-commerce-backend`).
 
-## Configuration (what you need to set)
+## Project structure
 
-- **Backend URL** – In `lib/app_config.dart` set `apiBaseUrl`:
-  - Local (Chrome/macOS): `http://127.0.0.1:8000`
-  - Android emulator: `http://10.0.2.2:8000`
-  - Real device / other machine: your backend machine’s IP, e.g. `http://192.168.1.5:8000`
-- **Email (OTP and order confirmation)** – Configured on the **backend**. See `e-commerce-backend/EMAIL_CONFIG.md` for SMTP and env vars. Without it, OTP and order emails are printed to the backend console only.
+```
+lib/
+├── config/
+│   └── env.dart
+├── constants/
+│   └── app_constants.dart
+├── core/
+│   ├── api_client.dart
+│   ├── http_utils.dart
+│   └── snackbar_utils.dart
+├── main.dart
+├── models/
+│   ├── cart.dart
+│   ├── cart_item.dart
+│   ├── order.dart
+│   ├── order_item.dart
+│   └── product.dart
+├── providers/
+│   ├── auth_provider.dart
+│   ├── cart_provider.dart
+│   ├── orders_provider.dart
+│   └── products_provider.dart
+├── theme/
+│   └── app_theme.dart
+└── ui/
+    ├── screens/
+    └── widgets/
+```
 
-## Run the frontend
+## Configuration
+
+### API base URL
+
+Backend URL is read from a **`.env`** file in the project root (same folder as `pubspec.yaml`). Variable: `API_BASE_URL=...` Example: `API_BASE_URL=http://127.0.0.1:8000`. Copy `.env.example` to `.env` if needed. Fallback: `http://127.0.0.1:8000`.
+
+Override at run/build:
+
+```bash
+# Android emulator
+flutter run -d android --dart-define=API_BASE_URL=http://10.0.2.2:8000
+
+# Physical device (use your machine’s IP)
+flutter run -d android --dart-define=API_BASE_URL=http://192.168.1.5:8000
+
+# Production
+flutter build apk --dart-define=API_BASE_URL=https://api.yoursite.com
+```
+
+To change the URL, edit `.env` (or create it from `.env.example`).
+
+### Backend
+
+Start the backend first:
+
+```bash
+cd e-commerce-backend
+.venv/bin/python manage.py runserver 127.0.0.1:8000
+```
+
+Email (OTP, order confirmation) is configured on the backend; see the backend README.
+
+## Run the app
 
 ```bash
 cd e-commerce-client
@@ -18,21 +73,44 @@ flutter pub get
 flutter run -d chrome
 ```
 
-Chrome opens with the app. The terminal shows the URL (e.g. `http://localhost:12345`).
+For a fixed web URL: `flutter run -d chrome --web-hostname 0.0.0.0 --web-port 8080` then open **http://localhost:8080**.
 
-### URL not working in another tab or browser?
+### Android
 
-By default the dev server can be picky. Run with a **fixed port** and **host 0.0.0.0** so the same URL works when you paste it in another tab or browser:
+**One-time setup**
 
-```bash
-flutter run -d chrome --web-hostname 0.0.0.0 --web-port 8080
-```
+1. Install [Android Studio](https://developer.android.com/studio).
+2. Open it and install the Android SDK when prompted.
+3. **More Actions** → **Virtual Device Manager** → **Create Device** (e.g. Pixel 6, API 34) → **Finish**.
+4. Start the emulator (Play next to the device).
 
-Then open **http://localhost:8080** (or **http://127.0.0.1:8080**) in any tab or browser on the same machine.
+**Every time**
 
-- **Same computer, any browser/tab:** use `http://localhost:8080` or `http://127.0.0.1:8080`.
-- **Another device on your network:** use `http://YOUR_PC_IP:8080` (e.g. `http://192.168.1.5:8080`). Keep the backend and CORS set up for that if needed.
+1. Start the backend (see above).
+2. From `e-commerce-client` run:
+   ```bash
+   ./run_android.sh
+   ```
+   or:
+   ```bash
+   flutter run -d <device-id> --dart-define=API_BASE_URL=http://10.0.2.2:8000
+   ```
+   Use `flutter devices` to get `<device-id>`.
 
-## Run on Android
+For a **physical device** on the same Wi‑Fi, use your machine’s IP in `API_BASE_URL` (e.g. `http://192.168.1.5:8000`).
 
-See **[ANDROID_RUN.md](ANDROID_RUN.md)** for how to check the app on Android (emulator or device), including setting `apiBaseUrl` and what to verify (profile with initials avatar, signup/OTP, orders).
+**Admin dashboard on device**
+
+- Emulator: in device browser open **http://10.0.2.2:8000/dashboard/**.
+- Physical device: open **http://&lt;YOUR_MAC_IP&gt;:8000/dashboard/**.
+- Log in with dashboard credentials (e.g. admin / Admin@123).
+
+## Features
+
+- **Storefront**: product list, product detail with images, add to cart.
+- **Cart**: quantity +/- (optimistic update), remove item, checkout.
+- **Checkout**: guest or logged-in; coupon; order placement; full-screen order success.
+- **Auth**: login, register (OTP email), verify email, profile (view/edit, avatar, email change with OTP), logout.
+- **Orders**: “My orders” from profile; order history with status and total.
+
+Constants and theme: `lib/constants/app_constants.dart`, `lib/theme/app_theme.dart`.

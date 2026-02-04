@@ -2,13 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import '../app_config.dart';
+import '../config/env.dart';
+import '../constants/app_constants.dart';
 import '../core/api_client.dart';
 import '../core/http_utils.dart';
 import '../models/product.dart';
 
 class ProductsProvider extends ChangeNotifier {
-  ProductsProvider() : _api = ApiClient(AppConfig.apiBaseUrl);
+  ProductsProvider() : _api = ApiClient();
 
   final ApiClient _api;
 
@@ -26,7 +27,7 @@ class ProductsProvider extends ChangeNotifier {
     singleProduct = null;
     notifyListeners();
     try {
-      final res = await _api.get('/api/products/$id/');
+      final res = await _api.get(ApiPaths.product(id));
       if (res.statusCode == 404) {
         singleError = 'Product not found';
         singleLoading = false;
@@ -62,9 +63,8 @@ class ProductsProvider extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
-
     try {
-      final res = await _api.get('/api/products/');
+      final res = await _api.get(ApiPaths.products);
       if (res.statusCode >= 400) {
         loading = false;
         error = errorFromResponse(res).message;
@@ -75,7 +75,7 @@ class ProductsProvider extends ChangeNotifier {
       products = list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
       loading = false;
-      error = 'Cannot reach server. Start the backend (python manage.py runserver) at ${AppConfig.apiBaseUrl}';
+      error = 'Cannot reach server. Start the backend at ${Env.apiBaseUrl}';
       notifyListeners();
       return;
     }
@@ -83,4 +83,3 @@ class ProductsProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
-

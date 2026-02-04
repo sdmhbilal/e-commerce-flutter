@@ -12,8 +12,7 @@
 .swiftpm/
 migrate_working_dir/
 
-# Environment and secrets
-.env
+# Environment and secrets (keep .env committed with default; override locally)
 .env.local
 .env.*.local
 

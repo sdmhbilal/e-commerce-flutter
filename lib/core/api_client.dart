@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../config/env.dart';
+import '../constants/app_constants.dart';
+
 class ApiClient {
-  ApiClient(this.baseUrl);
+  ApiClient([String? baseUrl]) : baseUrl = baseUrl ?? Env.apiBaseUrl;
 
   final String baseUrl;
 
-  /// POST multipart/form-data (e.g. avatar upload). [bytes] and [filename] work on all platforms.
   Future<http.StreamedResponse> postMultipart(
     String path, {
     required List<int> bytes,
@@ -25,11 +27,7 @@ class ApiClient {
     return request.send();
   }
 
-  Future<http.Response> get(
-    String path, {
-    bool auth = false,
-    bool cart = false,
-  }) async {
+  Future<http.Response> get(String path, {bool auth = false, bool cart = false}) async {
     final uri = Uri.parse('$baseUrl$path');
     final headers = await _headers(auth: auth, cart: cart);
     return http.get(uri, headers: headers);
@@ -57,11 +55,7 @@ class ApiClient {
     return http.patch(uri, headers: headers, body: jsonEncode(body ?? {}));
   }
 
-  Future<http.Response> delete(
-    String path, {
-    bool auth = false,
-    bool cart = false,
-  }) async {
+  Future<http.Response> delete(String path, {bool auth = false, bool cart = false}) async {
     final uri = Uri.parse('$baseUrl$path');
     final headers = await _headers(auth: auth, cart: cart);
     return http.delete(uri, headers: headers);
@@ -69,9 +63,8 @@ class ApiClient {
 
   Future<Map<String, String>> _headers({required bool auth, required bool cart}) async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
-    final cartToken = prefs.getString('cart_token');
-
+    final token = prefs.getString(StorageKeys.authToken);
+    final cartToken = prefs.getString(StorageKeys.cartToken);
     final headers = <String, String>{
       'Content-Type': 'application/json',
       'Accept': 'application/json',
@@ -85,4 +78,3 @@ class ApiClient {
     return headers;
   }
 }
-

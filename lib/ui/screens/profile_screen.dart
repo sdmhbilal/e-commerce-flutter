@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import '../../app_config.dart';
+import '../../config/env.dart';
+import '../../constants/app_constants.dart';
 import '../../providers/auth_provider.dart';
 import 'edit_profile_screen.dart';
 import 'login_screen.dart';
@@ -17,7 +18,6 @@ String _displayName(Map<String, dynamic>? p) {
   return (p['username'] ?? '—').toString();
 }
 
-/// Initials for avatar: "First Last" -> "FL", or username/email fallback (max 2 chars).
 String _avatarInitials(Map<String, dynamic>? p) {
   if (p == null) return '?';
   final first = (p['first_name'] ?? '').toString().trim();
@@ -108,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (!auth.isAuthed) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Profile')),
+        appBar: AppBar(title: const Text(AppStrings.profile)),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -133,8 +133,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
+    if (auth.profileError != null && !auth.profileLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text(AppStrings.profile)),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, size: 48, color: theme.colorScheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  auth.profileError!,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: () => auth.loadProfile(),
+                  icon: const Icon(Icons.refresh, size: 20),
+                  label: const Text('Retry'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => auth.logout(),
+                  icon: const Icon(Icons.login, size: 20),
+                  label: const Text('Log in again'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: const Text(AppStrings.profile)),
       body: auth.profileLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -266,7 +301,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   icon: const Icon(Icons.receipt_long_outlined, size: 20),
-                  label: const Text('My orders'),
+                  label: const Text(AppStrings.myOrders),
                 ),
                 if (auth.profileError != null) ...[
                   const SizedBox(height: 12),
@@ -309,7 +344,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _absoluteAvatarUrl(String url) {
     if (url.startsWith('http')) return url;
-    final base = AppConfig.apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
+    final base = Env.apiBaseUrl.replaceFirst(RegExp(r'/$'), '');
     return url.startsWith('/') ? '$base$url' : '$base/$url';
   }
 }

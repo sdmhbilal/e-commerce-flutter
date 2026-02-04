@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../models/product.dart';
+import '../../constants/app_constants.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/products_provider.dart';
 import '../widgets/empty_state.dart';
@@ -16,8 +16,6 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _selectedImageIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -69,15 +67,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       );
     }
 
-    final displayUrls = product.imageUrls.isNotEmpty
-        ? product.imageUrls
-        : (product.imageUrl != null && product.imageUrl!.isNotEmpty
-            ? [product.imageUrl!]
-            : <String>[]);
-    final mainImageUrl = displayUrls.isNotEmpty
-        ? displayUrls[_selectedImageIndex.clamp(0, displayUrls.length - 1)]
-        : product.imageUrl;
-
     return Scaffold(
       appBar: AppBar(title: Text(product.name)),
       body: SingleChildScrollView(
@@ -85,48 +74,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _ProductDetailImage(imageUrl: mainImageUrl, theme: theme),
-            if (displayUrls.length > 1) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 72,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: displayUrls.length,
-                  itemBuilder: (_, i) {
-                    final url = displayUrls[i];
-                    final selected = i == _selectedImageIndex;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedImageIndex = i),
-                        child: Container(
-                          width: 72,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selected
-                                  ? theme.colorScheme.primary
-                                  : theme.colorScheme.outlineVariant,
-                              width: selected ? 2 : 1,
-                            ),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.broken_image_outlined,
-                              color: theme.colorScheme.outline,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+            _ProductDetailImage(imageUrl: product.imageUrl, theme: theme),
             const SizedBox(height: 20),
             Text(
               product.name,
@@ -139,7 +87,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               children: [
                 Chip(
                   label: Text(
-                    'PKR ${product.price}',
+                    '${AppStrings.currency} ${product.price}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: theme.colorScheme.onPrimaryContainer,

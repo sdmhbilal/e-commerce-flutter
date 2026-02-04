@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../constants/app_constants.dart';
 import '../../core/http_utils.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
@@ -37,7 +38,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Checkout')),
+      appBar: AppBar(title: const Text(AppStrings.checkout)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -53,7 +54,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     children: [
                       Text('Subtotal', style: theme.textTheme.bodyLarge),
                       Text(
-                        'PKR ${cart.cart?.subtotal ?? '0.00'}',
+                        '${AppStrings.currency} ${cart.cart?.subtotal ?? '0.00'}',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -72,7 +73,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         Text(
-                          '- PKR ${cart.discountAmount ?? '0.00'}',
+                          '- ${AppStrings.currency} ${cart.discountAmount ?? '0.00'}',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.primary,
                             fontWeight: FontWeight.w600,
@@ -93,7 +94,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         Text(
-                          'PKR ${cart.totalAfterDiscount ?? cart.cart?.subtotal ?? '0.00'}',
+                          '${AppStrings.currency} ${cart.totalAfterDiscount ?? cart.cart?.subtotal ?? '0.00'}',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -112,7 +113,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         Text(
-                          'PKR ${cart.cart?.subtotal ?? '0.00'}',
+                          '${AppStrings.currency} ${cart.cart?.subtotal ?? '0.00'}',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -128,6 +129,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    'One coupon per order. Applying a new code replaces the current one.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
@@ -154,7 +162,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   return;
                                 }
                                 try {
-                                  await cart.applyCoupon(_coupon.text);
+                                  await cart.applyCoupon(_coupon.text.trim());
                                   if (context.mounted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
@@ -188,18 +196,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onDeleted: () => cart.clearAppliedCoupon(),
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          'Discount: PKR ${cart.discountAmount ?? '0.00'}',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            'Discount: ${AppStrings.currency} ${cart.discountAmount ?? '0.00'}',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Payable: PKR ${cart.totalAfterDiscount ?? ''}',
+                      'Payable: ${AppStrings.currency} ${cart.totalAfterDiscount ?? ''}',
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),

@@ -4,12 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../app_config.dart';
+import '../constants/app_constants.dart';
 import '../core/api_client.dart';
 import '../core/http_utils.dart';
 
 class AuthProvider extends ChangeNotifier {
-  AuthProvider() : _api = ApiClient(AppConfig.apiBaseUrl);
+  AuthProvider() : _api = ApiClient();
 
   final ApiClient _api;
 
@@ -17,14 +17,13 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _token;
   bool get isAuthed => _token != null && _token!.isNotEmpty;
 
-  /// Profile from GET /api/auth/me/ (id, username, email)
   Map<String, dynamic>? userProfile;
   bool profileLoading = false;
   String? profileError;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
-    _token = prefs.getString('auth_token');
+    _token = prefs.getString(StorageKeys.authToken);
     if (isAuthed) loadProfile();
     notifyListeners();
   }
@@ -35,9 +34,17 @@ class AuthProvider extends ChangeNotifier {
     profileError = null;
     notifyListeners();
     try {
-      final res = await _api.get('/api/auth/me/', auth: true);
+      final res = await _api.get(ApiPaths.authMe, auth: true);
       if (res.statusCode >= 400) {
+        profileLoading = false;
         profileError = errorFromResponse(res).message;
+        if (res.statusCode == 401) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove(StorageKeys.authToken);
+          _token = null;
+          userProfile = null;
+          profileError = null;
+        }
         notifyListeners();
         return;
       }
@@ -53,20 +60,17 @@ class AuthProvider extends ChangeNotifier {
   Future<void> logout() async {
     if (isAuthed) {
       try {
-        await _api.post('/api/auth/logout/', auth: true);
-      } catch (_) {
-        // Always clear local token even if backend call fails
-      }
+        await _api.post(ApiPaths.authLogout, auth: true);
+      } catch (_) {}
     }
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+    await prefs.remove(StorageKeys.authToken);
     _token = null;
     userProfile = null;
     profileError = null;
     notifyListeners();
   }
 
-  /// Register: sends OTP to email. Returns email on success. User must then call verifyEmail.
   Future<String> register({
     required String username,
     required String email,
@@ -74,7 +78,7 @@ class AuthProvider extends ChangeNotifier {
     required String lastName,
     required String password,
   }) async {
-    final res = await _api.post('/api/auth/register/', body: {
+    final res = await _api.post(ApiPaths.authRegister, body: {
       'username': username,
       'email': email,
       'first_name': firstName,
@@ -86,19 +90,14 @@ class AuthProvider extends ChangeNotifier {
     return (data['email'] as String?) ?? email;
   }
 
-  /// Verify email with OTP; on success saves token and loads profile.
   Future<void> verifyEmail({required String email, required String otp}) async {
-    final res = await _api.post('/api/auth/verify-email/', body: {
-      'email': email,
-      'otp': otp,
-    });
+    final res = await _api.post(ApiPaths.authVerifyEmail, body: {'email': email, 'otp': otp});
     if (res.statusCode >= 400) throw errorFromResponse(res);
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     await _saveToken(data['token'] as String);
     await loadProfile();
   }
 
-  /// Update profile. If backend returns [pending_email], caller should show OTP step and call [verifyEmailChange].
   Future<Map<String, dynamic>> updateProfile({
     String? firstName,
     String? lastName,
@@ -109,32 +108,24 @@ class AuthProvider extends ChangeNotifier {
     if (firstName != null) body['first_name'] = firstName;
     if (lastName != null) body['last_name'] = lastName;
     if (email != null) body['email'] = email;
-    final res = await _api.patch('/api/auth/profile/', auth: true, body: body);
+    final res = await _api.patch(ApiPaths.authProfile, auth: true, body: body);
     if (res.statusCode >= 400) throw errorFromResponse(res);
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     await loadProfile();
     return data;
   }
 
-  /// Verify new email with OTP after requesting email change; then refreshes profile.
   Future<void> verifyEmailChange({required String newEmail, required String otp}) async {
-    final res = await _api.post('/api/auth/verify-email-change/', body: {
-      'new_email': newEmail,
-      'otp': otp,
-    }, auth: true);
+    final res = await _api.post(ApiPaths.authVerifyEmailChange,
+        body: {'new_email': newEmail, 'otp': otp}, auth: true);
     if (res.statusCode >= 400) throw errorFromResponse(res);
     await loadProfile();
   }
 
-  /// Upload avatar image (bytes + filename from image_picker). Refreshes profile on success.
   Future<void> uploadAvatar({required List<int> bytes, required String filename}) async {
     if (!isAuthed) return;
-    final streamed = await _api.postMultipart(
-      '/api/auth/profile/avatar/',
-      bytes: bytes,
-      filename: filename,
-      auth: true,
-    );
+    final streamed = await _api.postMultipart(ApiPaths.authProfileAvatar,
+        bytes: bytes, filename: filename, auth: true);
     final res = await http.Response.fromStream(streamed);
     if (res.statusCode >= 400) throw errorFromResponse(res);
     final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -143,10 +134,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> login({required String username, required String password}) async {
-    final res = await _api.post('/api/auth/login/', body: {
-      'username': username,
-      'password': password,
-    });
+    final res = await _api.post(ApiPaths.authLogin, body: {'username': username, 'password': password});
     if (res.statusCode >= 400) throw errorFromResponse(res);
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     await _saveToken(data['token'] as String);
@@ -155,9 +143,8 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> _saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('auth_token', token);
+    await prefs.setString(StorageKeys.authToken, token);
     _token = token;
     notifyListeners();
   }
 }
-

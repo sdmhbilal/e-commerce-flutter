@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 class ApiError implements Exception {
   ApiError(this.message);
   final String message;
-
   @override
   String toString() => message;
 }
@@ -29,4 +28,3 @@ ApiError errorFromResponse(http.Response res) {
     return ApiError('Request failed (${res.statusCode}).');
   }
 }
-

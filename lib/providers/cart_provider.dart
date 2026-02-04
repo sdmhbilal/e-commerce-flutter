@@ -3,14 +3,15 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../app_config.dart';
+import '../config/env.dart';
+import '../constants/app_constants.dart';
 import '../core/api_client.dart';
 import '../core/http_utils.dart';
 import '../models/cart.dart';
 import '../models/order.dart';
 
 class CartProvider extends ChangeNotifier {
-  CartProvider() : _api = ApiClient(AppConfig.apiBaseUrl);
+  CartProvider() : _api = ApiClient();
 
   final ApiClient _api;
 
@@ -22,16 +23,14 @@ class CartProvider extends ChangeNotifier {
   String? discountAmount;
   String? totalAfterDiscount;
 
-  /// [silent] true = do not set [loading], so UI won't show full-screen spinner (e.g. when updating quantity).
   Future<void> refresh({bool silent = false}) async {
     if (!silent) {
       loading = true;
       error = null;
       notifyListeners();
     }
-
     try {
-      final res = await _api.get('/api/cart/', cart: true);
+      final res = await _api.get(ApiPaths.cart, cart: true);
       if (res.statusCode >= 400) {
         if (!silent) loading = false;
         error = errorFromResponse(res).message;
@@ -39,15 +38,36 @@ class CartProvider extends ChangeNotifier {
         return;
       }
       final data = jsonDecode(res.body) as Map<String, dynamic>;
-      cart = Cart.fromJson(data);
+      final newCart = Cart.fromJson(data);
+      if (newCart.items.isNotEmpty && cart != null && cart!.items.isNotEmpty) {
+        final idToIndex = <int, int>{};
+        for (var i = 0; i < cart!.items.length; i++) {
+          idToIndex[cart!.items[i].id] = i;
+        }
+        final sorted = List<CartItem>.from(newCart.items);
+        sorted.sort((a, b) {
+          final ai = idToIndex[a.id] ?? 0x7fffffff;
+          final bi = idToIndex[b.id] ?? 0x7fffffff;
+          return ai.compareTo(bi);
+        });
+        cart = Cart(
+          id: newCart.id,
+          cartToken: newCart.cartToken,
+          subtotal: newCart.subtotal,
+          totalItems: newCart.totalItems,
+          items: sorted,
+        );
+      } else {
+        cart = newCart;
+      }
       final token = cart?.cartToken;
       if (token != null && token.isNotEmpty) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('cart_token', token);
+        await prefs.setString(StorageKeys.cartToken, token);
       }
     } catch (e) {
       if (!silent) loading = false;
-      error = 'Cannot reach server. Start the backend at ${AppConfig.apiBaseUrl}';
+      error = 'Cannot reach server. Start the backend at ${Env.apiBaseUrl}';
       notifyListeners();
       return;
     }
@@ -56,26 +76,21 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> addItem({required int productId, int quantity = 1}) async {
-    // Ensure we have a cart (and token) before adding; backend creates one on GET if missing.
     final hasToken = cart?.cartToken != null && cart!.cartToken!.isNotEmpty;
     if (!hasToken) await refresh();
-
-    final res = await _api.post('/api/cart/items/', cart: true, body: {
+    final res = await _api.post(ApiPaths.cartItemsCreate, cart: true, body: {
       'product_id': productId,
       'quantity': quantity,
     });
     if (res.statusCode >= 400) throw errorFromResponse(res);
-
-    // Persist cart_token from response so we keep the same cart (backend may have created one on POST).
     try {
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       final token = data['cart_token']?.toString();
       if (token != null && token.isNotEmpty) {
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('cart_token', token);
+        await prefs.setString(StorageKeys.cartToken, token);
       }
     } catch (_) {}
-
     await refresh();
   }
 
@@ -86,9 +101,7 @@ class CartProvider extends ChangeNotifier {
       notifyListeners();
     }
     try {
-      final res = await _api.patch('/api/cart/items/$itemId/', cart: true, body: {
-        'quantity': quantity,
-      });
+      final res = await _api.patch(ApiPaths.cartItems(itemId), cart: true, body: {'quantity': quantity});
       if (res.statusCode >= 400) throw errorFromResponse(res);
       await refresh(silent: true);
     } catch (_) {
@@ -124,13 +137,13 @@ class CartProvider extends ChangeNotifier {
   }
 
   Future<void> removeItem({required int itemId}) async {
-    final res = await _api.delete('/api/cart/items/$itemId/delete/', cart: true);
+    final res = await _api.delete(ApiPaths.cartItemDelete(itemId), cart: true);
     if (res.statusCode >= 400) throw errorFromResponse(res);
     await refresh(silent: true);
   }
 
   Future<void> applyCoupon(String code) async {
-    final res = await _api.post('/api/coupons/validate/', cart: true, body: {'code': code});
+    final res = await _api.post(ApiPaths.couponsValidate, cart: true, body: {'code': code});
     if (res.statusCode >= 400) throw errorFromResponse(res);
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     appliedCouponCode = (data['code'] ?? '').toString();
@@ -153,7 +166,7 @@ class CartProvider extends ChangeNotifier {
     bool auth = false,
   }) async {
     final res = await _api.post(
-      '/api/orders/',
+      ApiPaths.orders,
       cart: true,
       auth: auth,
       body: {
@@ -165,8 +178,6 @@ class CartProvider extends ChangeNotifier {
     if (res.statusCode >= 400) throw errorFromResponse(res);
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     final order = Order.fromJson(data);
-
-    // Clear coupon UI state + refresh cart (backend clears items)
     appliedCouponCode = null;
     discountAmount = null;
     totalAfterDiscount = null;
@@ -174,4 +185,3 @@ class CartProvider extends ChangeNotifier {
     return order;
   }
 }
-

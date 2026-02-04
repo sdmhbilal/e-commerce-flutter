@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../constants/app_constants.dart';
 import '../../models/order.dart';
 import '../../providers/orders_provider.dart';
 import '../widgets/empty_state.dart';
@@ -27,7 +28,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('My orders')),
+      appBar: AppBar(title: const Text(AppStrings.myOrders)),
       body: orders.loading
           ? const Center(child: CircularProgressIndicator())
           : orders.error != null
@@ -130,7 +131,7 @@ class _OrderCard extends StatelessWidget {
             ],
             const SizedBox(height: 8),
             Text(
-              '${order.items.length} item(s) · PKR ${order.totalAmount}',
+              '${order.items.length} item(s) · ${AppStrings.currency} ${order.totalAmount}',
               style: theme.textTheme.bodyMedium,
             ),
           ],

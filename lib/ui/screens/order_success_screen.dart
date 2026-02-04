@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../constants/app_constants.dart';
 import '../../models/order.dart';
 import 'products_screen.dart';
 
-/// Full-screen order confirmation so the user sees correct amounts (no checkout with 0 in background).
 class OrderSuccessScreen extends StatelessWidget {
   const OrderSuccessScreen({super.key, required this.order});
 
@@ -12,8 +12,7 @@ class OrderSuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasDiscount = order.discountAmount != null &&
-        order.discountAmount!.isNotEmpty &&
+    final hasDiscount = order.discountAmount.isNotEmpty &&
         order.discountAmount != '0' &&
         order.discountAmount != '0.00';
 
@@ -31,7 +30,7 @@ class OrderSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Order placed',
+                AppStrings.orderPlaced,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -52,10 +51,10 @@ class OrderSuccessScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _row(theme, 'Subtotal', 'PKR ${order.subtotalAmount}'),
+                    _row(theme, 'Subtotal', '${AppStrings.currency} ${order.subtotalAmount}'),
                     if (hasDiscount) ...[
                       const SizedBox(height: 12),
-                      _row(theme, 'Discount', '- PKR ${order.discountAmount}'),
+                      _row(theme, 'Discount', '- ${AppStrings.currency} ${order.discountAmount}'),
                     ],
                     const SizedBox(height: 12),
                     const Divider(height: 1),
@@ -63,7 +62,7 @@ class OrderSuccessScreen extends StatelessWidget {
                     _row(
                       theme,
                       'Total',
-                      'PKR ${order.totalAmount}',
+                      '${AppStrings.currency} ${order.totalAmount}',
                       isTotal: true,
                     ),
                   ],

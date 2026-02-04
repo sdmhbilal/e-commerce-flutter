@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../constants/app_constants.dart';
+
 class SectionCard extends StatelessWidget {
   const SectionCard({
     super.key,
@@ -18,7 +20,7 @@ class SectionCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(Dimensions.radiusLarge),
       ),
       child: Padding(
         padding: padding ?? const EdgeInsets.all(20),

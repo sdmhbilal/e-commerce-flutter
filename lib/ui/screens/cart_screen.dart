@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/http_utils.dart';
+import '../../constants/app_constants.dart';
+import '../../core/snackbar_utils.dart';
 import '../../models/cart.dart';
 import '../../providers/cart_provider.dart';
 import '../widgets/app_scaffold.dart';
@@ -12,12 +13,7 @@ Future<void> _updateQuantity(BuildContext context, CartProvider cart, int itemId
   try {
     await cart.updateItem(itemId: itemId, quantity: quantity);
   } catch (e) {
-    if (context.mounted) {
-      final msg = e is ApiError ? e.message : e.toString();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
-      );
-    }
+    if (context.mounted) showErrorSnackBar(context, e);
   }
 }
 
@@ -25,12 +21,7 @@ Future<void> _removeItem(BuildContext context, CartProvider cart, int itemId) as
   try {
     await cart.removeItem(itemId: itemId);
   } catch (e) {
-    if (context.mounted) {
-      final msg = e is ApiError ? e.message : e.toString();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
-      );
-    }
+    if (context.mounted) showErrorSnackBar(context, e);
   }
 }
 
@@ -56,7 +47,7 @@ class _CartScreenState extends State<CartScreen> {
     final items = cart.cart?.items ?? [];
 
     return AppScaffold(
-      title: 'Your cart',
+      title: AppStrings.yourCart,
       body: cart.loading
           ? const Center(child: CircularProgressIndicator())
           : items.isEmpty
@@ -112,7 +103,7 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                             ),
                             Text(
-                              'PKR ${cart.cart?.subtotal ?? '0.00'}',
+                              '${AppStrings.currency} ${cart.cart?.subtotal ?? '0.00'}',
                               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -124,7 +115,7 @@ class _CartScreenState extends State<CartScreen> {
                         onPressed: () => Navigator.of(context).push(
                           MaterialPageRoute(builder: (_) => const CheckoutScreen()),
                         ),
-                        child: const Text('Checkout'),
+                        child: const Text(AppStrings.checkout),
                       ),
                     ],
                   ),
@@ -168,7 +159,7 @@ class _CartItemTile extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'PKR ${item.unitPrice} each',
+                    '${AppStrings.currency} ${item.unitPrice} each',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(

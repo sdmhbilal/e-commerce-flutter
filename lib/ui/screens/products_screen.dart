@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../constants/app_constants.dart';
 import '../../models/product.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
@@ -36,7 +37,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     final auth = context.watch<AuthProvider>();
 
     return AppScaffold(
-      title: 'Storefront',
+      title: AppStrings.storefront,
       actions: [
         IconButton(
           onPressed: () => Navigator.of(context).push(
@@ -45,7 +46,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
             ),
           ),
           icon: Icon(auth.isAuthed ? Icons.person : Icons.person_outline),
-          tooltip: auth.isAuthed ? 'Profile' : 'Login / Register',
+          tooltip: auth.isAuthed ? AppStrings.profile : 'Login / Register',
         ),
         IconButton(
           onPressed: () => Navigator.of(context).push(
@@ -184,7 +185,7 @@ class _ProductTile extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         Chip(
-                          label: Text('PKR ${product.price}'),
+                          label: Text('${AppStrings.currency} ${product.price}'),
                           backgroundColor: theme.colorScheme.primaryContainer,
                           labelStyle: theme.textTheme.labelMedium?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer,
