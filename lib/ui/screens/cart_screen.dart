@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
+import '../../core/route_observer.dart';
 import '../../core/snackbar_utils.dart';
 import '../../models/cart.dart';
 import '../../providers/cart_provider.dart';
@@ -32,7 +33,30 @@ class CartScreen extends StatefulWidget {
   State<CartScreen> createState() => _CartScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
+class _CartScreenState extends State<CartScreen> with RouteAware {
+  bool _routeObserverSubscribed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && !_routeObserverSubscribed) {
+      routeObserver.subscribe(this, route);
+      _routeObserverSubscribed = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_routeObserverSubscribed) routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    context.read<CartProvider>().refresh();
+  }
+
   @override
   void initState() {
     super.initState();

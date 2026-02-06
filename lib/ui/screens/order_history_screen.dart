@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
+import '../../core/route_observer.dart';
 import '../../models/order.dart';
 import '../../providers/orders_provider.dart';
 import '../widgets/empty_state.dart';
@@ -13,13 +14,36 @@ class OrderHistoryScreen extends StatefulWidget {
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
 }
 
-class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
+class _OrderHistoryScreenState extends State<OrderHistoryScreen> with RouteAware {
+  bool _routeObserverSubscribed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && !_routeObserverSubscribed) {
+      routeObserver.subscribe(this, route);
+      _routeObserverSubscribed = true;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<OrdersProvider>().fetch();
     });
+  }
+
+  @override
+  void dispose() {
+    if (_routeObserverSubscribed) routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    context.read<OrdersProvider>().fetch();
   }
 
   @override

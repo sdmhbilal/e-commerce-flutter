@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
+import '../../core/route_observer.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/products_provider.dart';
 import '../widgets/empty_state.dart';
@@ -15,7 +16,19 @@ class ProductDetailScreen extends StatefulWidget {
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
+class _ProductDetailScreenState extends State<ProductDetailScreen> with RouteAware {
+  bool _routeObserverSubscribed = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && !_routeObserverSubscribed) {
+      routeObserver.subscribe(this, route);
+      _routeObserverSubscribed = true;
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -26,8 +39,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   void dispose() {
+    if (_routeObserverSubscribed) routeObserver.unsubscribe(this);
     context.read<ProductsProvider>().clearSingleProduct();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    context.read<ProductsProvider>().fetchProduct(widget.productId);
+    context.read<CartProvider>().refresh();
   }
 
   @override

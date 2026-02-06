@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../config/env.dart';
 import '../../constants/app_constants.dart';
+import '../../core/route_observer.dart';
 import '../../providers/auth_provider.dart';
 import 'edit_profile_screen.dart';
 import 'login_screen.dart';
@@ -41,8 +42,32 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
+  bool _routeObserverSubscribed = false;
   bool _uploadingAvatar = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && !_routeObserverSubscribed) {
+      routeObserver.subscribe(this, route);
+      _routeObserverSubscribed = true;
+    }
+  }
+
+  @override
+  void dispose() {
+    if (_routeObserverSubscribed) routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    if (context.read<AuthProvider>().isAuthed) {
+      context.read<AuthProvider>().loadProfile();
+    }
+  }
 
   Future<void> _pickAndUploadAvatar(BuildContext context, AuthProvider auth) async {
     final picker = ImagePicker();

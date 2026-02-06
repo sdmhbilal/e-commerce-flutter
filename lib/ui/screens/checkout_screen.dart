@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../constants/app_constants.dart';
 import '../../core/http_utils.dart';
+import '../../core/route_observer.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/cart_provider.dart';
 import '../widgets/section_card.dart';
@@ -16,7 +17,8 @@ class CheckoutScreen extends StatefulWidget {
   State<CheckoutScreen> createState() => _CheckoutScreenState();
 }
 
-class _CheckoutScreenState extends State<CheckoutScreen> {
+class _CheckoutScreenState extends State<CheckoutScreen> with RouteAware {
+  bool _routeObserverSubscribed = false;
   final _coupon = TextEditingController();
   final _guestName = TextEditingController();
   final _guestEmail = TextEditingController();
@@ -24,11 +26,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && !_routeObserverSubscribed) {
+      routeObserver.subscribe(this, route);
+      _routeObserverSubscribed = true;
+    }
+  }
+
+  @override
   void dispose() {
+    if (_routeObserverSubscribed) routeObserver.unsubscribe(this);
     _coupon.dispose();
     _guestName.dispose();
     _guestEmail.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    context.read<CartProvider>().refresh();
   }
 
   @override

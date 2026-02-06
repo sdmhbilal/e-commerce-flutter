@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'constants/app_constants.dart';
+import 'core/route_observer.dart';
 import 'providers/auth_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/orders_provider.dart';
@@ -36,6 +37,7 @@ class App extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.light,
+        navigatorObservers: [routeObserver],
         home: const ProductsScreen(),
       ),
     );
