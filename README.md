@@ -1,10 +1,10 @@
 # E-Commerce Client (Flutter)
 
-Flutter app: products, cart, checkout, auth (login/OTP), profile, orders. Uses the Django backend.
+**Project overview:** Flutter app for products, cart, checkout, auth (login/OTP), profile, orders. Uses the Django backend.
 
-**Tech stack:** Flutter, Provider, http, Material 3.
+**Tech stack:** Dart 3.10+, Flutter 3.x, Provider ^6.1, http ^1.2, Material 3, SharedPreferences, flutter_dotenv. See `pubspec.yaml` for exact versions.
 
-## Setup
+## Setup instructions
 
 ```bash
 cd e-commerce-client
@@ -17,6 +17,6 @@ Run: `flutter run -d chrome` (or `-d android`). For emulator use `API_BASE_URL=h
 **Release APK:** `flutter build apk --release --dart-define=API_BASE_URL=https://YOUR_BACKEND_URL`  
 Output: `build/app/outputs/flutter-apk/app-release.apk`
 
-## API (consumed)
+## API documentation (basic)
 
 Same as backend: auth, products, cart, coupons, orders. See backend README for full API.
