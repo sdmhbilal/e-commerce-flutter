@@ -73,9 +73,10 @@ class ProductsProvider extends ChangeNotifier {
       }
       final list = jsonDecode(res.body) as List<dynamic>;
       products = list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (e) {
+    } catch (e, stack) {
       loading = false;
-      error = 'Cannot reach server. Start the backend at ${Env.apiBaseUrl}';
+      error = 'Cannot reach server.\n\nAPI URL: ${Env.apiBaseUrl}\n\nError: $e';
+      if (kDebugMode) debugPrint('Products fetch error: $e\n$stack');
       notifyListeners();
       return;
     }

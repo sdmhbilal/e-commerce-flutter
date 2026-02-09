@@ -65,9 +65,10 @@ class CartProvider extends ChangeNotifier {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(StorageKeys.cartToken, token);
       }
-    } catch (e) {
+    } catch (e, stack) {
       if (!silent) loading = false;
-      error = 'Cannot reach server. Start the backend at ${Env.apiBaseUrl}';
+      error = 'Cannot reach server.\n\nAPI URL: ${Env.apiBaseUrl}\n\nError: $e';
+      if (kDebugMode) debugPrint('Cart refresh error: $e\n$stack');
       notifyListeners();
       return;
     }

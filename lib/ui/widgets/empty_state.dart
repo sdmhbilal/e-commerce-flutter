@@ -35,10 +35,10 @@ class EmptyState extends StatelessWidget {
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 8),
-              Text(
+              SelectableText(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.outline,
                 ),
               ),
